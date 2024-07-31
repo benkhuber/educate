@@ -1,16 +1,84 @@
 import os
 from flask import Flask
+from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.orm import declarative_base, sessionmaker
 import requests
 
 load_dotenv(find_dotenv())
 
 app = Flask(__name__)
 
+DATABASE_URI = os.getenv('DB_URI')
+engine = create_engine(DATABASE_URI)
+Session = sessionmaker(bind=engine)
+session = Session()
+Base = declarative_base()
+
+class Job(Base):
+    __tablename__ = 'jobs'
+
+    id = Column(Integer, primary_key=True)
+    position_id = Column(Integer, nullable=False)
+    position_title = Column(String, nullable=False)
+    salary_info = Column(String)
+    posting_date = Column(DateTime, nullable=False)
+    expiration_date = Column(DateTime)
+    full_county_name = Column(String)
+    city_name = Column(String)
+    district_name = Column(String)
+    job_type_id = Column(Integer)
+    job_type = Column(String)
+    fulltime_parttime = Column(String)
+
+    def __repr__(self):
+        return (f'ID: {self.id} '
+                f'Position Title: {self.position_title}')
+
+Base.metadata.create_all(engine)
+
 def process_job(job):
-    posting_id = job["postingID"]
-    posting_title = job["positionTitle"]
-    print(f"{posting_id}: {posting_title}")
+    raw_posting_date = int(int(job['postingDate'].strip('/Date()')) / 1000)
+    raw_expiration_date = int(int(job['displayUntil'].strip('/Date()')) / 1000)
+
+    posting_date = datetime.fromtimestamp(raw_posting_date)
+    expiration_date = datetime.fromtimestamp(raw_expiration_date)
+
+    position_id = job['postingID']
+    position_title = job['positionTitle']
+    salary_info = job['salaryInfo']
+    posting_date = datetime.fromtimestamp(raw_posting_date)
+    expiration_date = datetime.fromtimestamp(raw_expiration_date)
+    full_county_name = job['fullCountyName']
+    city_name = job['city']
+    district_name = job['districtName']
+    job_type_id = job['jobTypeID']
+    job_type = job['jobType']
+    fulltime_parttime = job['FullTimePartTime']
+    
+    job_exists = session.query(Job).filter_by(position_id=position_id).first()
+
+    if job_exists:
+        print('Job posting exists in DB')
+    else:
+        new_job = Job(
+            position_id = position_id,
+            position_title = position_title,
+            salary_info = salary_info,
+            posting_date = posting_date,
+            expiration_date = expiration_date,
+            full_county_name = full_county_name,
+            city_name = city_name,
+            district_name = district_name,
+            job_type_id = job_type_id,
+            job_type = job_type,
+            fulltime_parttime = fulltime_parttime
+            )
+        
+        session.add(new_job)
+        session.commit()
+        print("Job did not exist in DB, added to DB")
 
 @app.route('/')
 def home():
@@ -36,4 +104,6 @@ def collector():
     return f"Status: {response.status_code}, collecting jobs..."
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = os.getenv('JOB_COLLECTOR_PORT')
+    print(port)
+    app.run(debug=True, port=port)
