@@ -1,20 +1,24 @@
+import os
 from flask import Flask
+from dotenv import load_dotenv, find_dotenv
 import requests
-import json
+
+load_dotenv(find_dotenv())
 
 app = Flask(__name__)
 
 def process_job(job):
     posting_id = job["postingID"]
-    print(posting_id)
+    posting_title = job["positionTitle"]
+    print(f"{posting_id}: {posting_title}")
 
 @app.route('/')
 def home():
-    return 'Job_collector'
+    return 'Job Collector Server'
 
 @app.route('/collector')
 def collector():
-    url = 'https://www.edjoin.org/Home/LoadJobs?rows=50&page=1&sort=postingDate&sortVal=2&order=desc&keywords=&location=&searchType=&regions=30&jobTypes=2,3,48,64,1,63&days=undefined&empType=&catID=0&onlineApps=true&recruitmentCenterID=0&stateID=24&regionID=null&districtID=0&searchID=0&_=1722384394646'
+    url = os.getenv('EDJOIN_API_URL')
 
     response = requests.get(url)
 
@@ -27,7 +31,9 @@ def collector():
     
     else:
         print(f"Request failed: {response.status_code}")
-    return 'Collecting jobs...'
+        return (f"Request failed: {response.status_code}")
+
+    return f"Status: {response.status_code}, collecting jobs..."
 
 if __name__ == '__main__':
     app.run(debug=True)
