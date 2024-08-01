@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify
+from dataclasses import dataclass
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -16,24 +17,26 @@ Session = sessionmaker(bind=engine)
 session = Session()
 Base = declarative_base()
 
+@dataclass
 class Job(Base):
     __tablename__ = 'jobs'
 
-    id = Column(Integer, primary_key=True)
-    position_id = Column(Integer, nullable=False)
-    position_title = Column(String, nullable=False)
-    salary_info = Column(String)
-    posting_date = Column(DateTime, nullable=False)
-    expiration_date = Column(DateTime)
-    full_county_name = Column(String)
-    city_name = Column(String)
-    district_name = Column(String)
-    job_type_id = Column(Integer)
-    job_type = Column(String)
-    fulltime_parttime = Column(String)
+    id:int = Column(Integer, primary_key=True)
+    position_id:int = Column(Integer, nullable=False)
+    position_title:str = Column(String, nullable=False)
+    salary_info:datetime = Column(String)
+    posting_date:datetime = Column(DateTime, nullable=False)
+    expiration_date:str = Column(DateTime)
+    full_county_name:str = Column(String)
+    city_name:str = Column(String)
+    district_name:str = Column(String)
+    job_type_id:int = Column(Integer)
+    job_type:str = Column(String)
+    fulltime_parttime:str = Column(String)
 
     def __repr__(self):
-        return (f'ID: {self.id} '
+        return (f'ID: {self.id}, '
+                f'Posting ID: {self.position_id}, '
                 f'Position Title: {self.position_title}')
 
 Base.metadata.create_all(engine)
@@ -105,10 +108,9 @@ def collector():
 
 @app.route('/fetch_jobs', methods=['GET'])
 def fetch_jobs():
-    jobs = Job.query.all()
-    return jsonify(jobs)
+    jobs = session.query(Job).all()
+    return jobs
 
 if __name__ == '__main__':
     port = os.getenv('JOB_COLLECTOR_PORT')
-    print(port)
     app.run(debug=True, port=port)
