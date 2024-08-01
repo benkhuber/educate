@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, jsonify
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -102,6 +102,11 @@ def collector():
         return (f"Request failed: {response.status_code}")
 
     return f"Status: {response.status_code}, collecting jobs..."
+
+@app.route('/fetch_jobs', methods=['GET'])
+def fetch_jobs():
+    jobs = Job.query.all()
+    return jsonify(jobs)
 
 if __name__ == '__main__':
     port = os.getenv('JOB_COLLECTOR_PORT')
