@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dataclasses import dataclass
 from datetime import datetime
@@ -40,6 +40,14 @@ class Job(Base):
         return (f'ID: {self.id}, '
                 f'Posting ID: {self.position_id}, '
                 f'Position Title: {self.position_title}')
+    
+@dataclass
+class User(Base):
+    __tablename__ = 'users'
+
+    id:int = Column(Integer, primary_key=True)
+    email:str = Column(String, nullable=False)
+    password:str = Column(String, nullable=False)
 
 Base.metadata.create_all(engine)
 
@@ -112,6 +120,35 @@ def collector():
 def fetch_jobs():
     jobs = session.query(Job).all()
     return jobs
+
+@app.route('/api/add_user')
+def add_user():
+    email = "test@test.com"
+    password = "password"
+
+    new_user = User(
+        email = email,
+        password = password
+    )
+
+    session.add(new_user)
+    session.commit()
+    print("User added to DB")
+    return f"Status: user added"
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    email = data.get('email')
+    print(email)
+
+    user = session.query(User).filter_by(email=email).first()
+
+    if user:
+        return jsonify({'message': 'Login successful'}), 200
+    else:
+        return jsonify({'message': 'Invalid email or password'}), 401
+
 
 if __name__ == '__main__':
     port = os.getenv('JOB_COLLECTOR_PORT')
