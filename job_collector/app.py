@@ -1,5 +1,6 @@
 import os
 from flask import Flask, jsonify
+from flask_cors import CORS
 from dataclasses import dataclass
 from datetime import datetime
 from dotenv import load_dotenv, find_dotenv
@@ -10,6 +11,7 @@ import requests
 load_dotenv(find_dotenv())
 
 app = Flask(__name__)
+CORS(app)
 
 DATABASE_URI = os.getenv('DB_URI')
 engine = create_engine(DATABASE_URI)
