@@ -97,6 +97,10 @@ def process_job(job):
 def home():
     return 'Job Collector Server'
 
+@app.route('/health')
+def health_check():
+    return 'OK'
+
 @app.route('/collector')
 def collector():
     url = os.getenv('EDJOIN_API_URL')
